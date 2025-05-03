@@ -6,9 +6,9 @@ import pandas as pd
 
 
 # import neccessary files
-amino_df = pd.read_csv('./dataFolder/Protein.csv')
-alc_df = pd.read_csv('./dataFolder/Alcohol.csv')
-sug_df = pd.read_csv('./dataFolder/Sugar.csv')
+amino_df = pd.read_csv('./dataFolder/Protein_MW.csv')
+alc_df = pd.read_csv('./dataFolder/Alcohol_MW.csv')
+sug_df = pd.read_csv('./dataFolder/Sugar_MW.csv')
  
 
 # Page layout
@@ -48,28 +48,34 @@ if water_fraction < 0 or water_fraction > 1.0:
 
 
 # Dropdown for 'PM' and 'DP'
-amino_dict = dict(zip(amino_df["Substance Name"].str.strip(), amino_df["LD50"]))
-alc_dict = dict(zip(alc_df["Substance Name"].str.strip(), alc_df["LD50"]))
-sug_dict = dict(zip(sug_df["Substance Name"].str.strip(), sug_df["LD50"]))
+amino_dict = dict(zip(amino_df["Substance Name"].str.strip(), zip(amino_df["LD50"], amino_df["Normalized_LD50"])))
+alc_dict = dict(zip(alc_df["Substance Name"].str.strip(), zip(alc_df["LD50"], alc_df["Normalized_LD50"])))
+sug_dict = dict(zip(sug_df["Substance Name"].str.strip(), zip(sug_df["LD50"], sug_df["Normalized_LD50"])))
 
 
 # drop down menu options 
 amino_options = list(amino_dict.keys())
 amino_choice = col1.selectbox('Select amino acid name', amino_options)
-amino_tox = amino_dict[amino_choice]
+amino_tox = amino_dict[amino_choice][0]
+amino_tox_mw = amino_dict[amino_choice][1]
 
 alc_options = list(alc_dict.keys())
 alc_choice = col2.selectbox('Select alcohol', alc_options)
-alc_tox = alc_dict[alc_choice]
+alc_tox = alc_dict[alc_choice][0]
+alc_tox_mw = alc_dict[alc_choice][1]
 
 sug_options = list(sug_dict.keys())
 sug_choice = col3.selectbox('Select sugar', sug_options)
-sug_tox = sug_dict[sug_choice]
+sug_tox = sug_dict[sug_choice][0]
+sug_tox_mw = sug_dict[sug_choice][1]
 
 ####
 # Toxicity prediction function 
 # which function should I choose?
 def calculate_weighted_tox(water_fraction, alcohol_ratio, sugar_ratio, amino_ratio, alcohol_tox, sugar_tox, amino_tox):
+    '''
+    This function does not work currectly. DON'T USE THIS
+    '''
     components_fraction = 1- water_fraction
     total_ratio = alcohol_ratio + sugar_ratio + amino_ratio
     alcohol_weight = components_fraction * (alcohol_ratio / total_ratio)
@@ -77,7 +83,7 @@ def calculate_weighted_tox(water_fraction, alcohol_ratio, sugar_ratio, amino_rat
     protein_weight = components_fraction * (amino_ratio / total_ratio)
     
     weighted_tox = (alcohol_weight * alcohol_tox) + (sugar_weight * sugar_tox) + (protein_weight * amino_tox)
-    
+
     return weighted_tox
 
 
@@ -96,4 +102,10 @@ def calculate_weighted_tox2(water_fraction, alcohol_ratio, sugar_ratio, amino_ra
 
 predicted_tox = calculate_weighted_tox2(water_fraction, alc_ratio, 
                                        sug_ratio, amino_ratio, alc_tox, sug_tox, amino_tox)
+
+predicted_tox_mw = calculate_weighted_tox2(water_fraction, alc_ratio, 
+                                       sug_ratio, amino_ratio, alc_tox_mw, sug_tox_mw, amino_tox_mw)
+
+
 st.markdown(f'## the NADE toxicity is {round(predicted_tox, 2)} mg/kg')
+st.markdown(f'## the NADE toxicity is {round(predicted_tox_mw/100, 2)} mol/kg')
