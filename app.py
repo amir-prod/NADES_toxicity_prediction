@@ -6,9 +6,9 @@ import pandas as pd
 
 
 # import neccessary files
-amino_df = pd.read_csv('./dataFolder/Protein_MW.csv')
-alc_df = pd.read_csv('./dataFolder/Alcohol_MW.csv')
-sug_df = pd.read_csv('./dataFolder/Sugar_MW.csv')
+amino_df = pd.read_csv('./dataFolder/Protein_MW_GCN.csv')
+alc_df = pd.read_csv('./dataFolder/Alcohol_MW_GCN.csv')
+sug_df = pd.read_csv('./dataFolder/Sugar_MW_GCN.csv')
  
 
 # Page layout
@@ -48,9 +48,9 @@ if water_fraction < 0 or water_fraction > 1.0:
 
 
 # Dropdown for 'PM' and 'DP'
-amino_dict = dict(zip(amino_df["Substance Name"].str.strip(), zip(amino_df["LD50"], amino_df["Normalized_LD50"])))
-alc_dict = dict(zip(alc_df["Substance Name"].str.strip(), zip(alc_df["LD50"], alc_df["Normalized_LD50"])))
-sug_dict = dict(zip(sug_df["Substance Name"].str.strip(), zip(sug_df["LD50"], sug_df["Normalized_LD50"])))
+amino_dict = dict(zip(amino_df["Substance Name"].str.strip(), zip(amino_df["LD50"], amino_df["Normalized_LD50"], amino_df["GCN_pred"], amino_df["Normalized_GCN_pred"])))
+alc_dict = dict(zip(alc_df["Substance Name"].str.strip(), zip(alc_df["LD50"], alc_df["Normalized_LD50"], alc_df["GCN_pred"], alc_df["Normalized_GCN_pred"])))
+sug_dict = dict(zip(sug_df["Substance Name"].str.strip(), zip(sug_df["LD50"], sug_df["Normalized_LD50"], sug_df["GCN_pred"], sug_df["Normalized_GCN_pred"])))
 
 
 # drop down menu options 
@@ -58,16 +58,22 @@ amino_options = list(amino_dict.keys())
 amino_choice = col1.selectbox('Select amino acid name', amino_options)
 amino_tox = amino_dict[amino_choice][0]
 amino_tox_mw = amino_dict[amino_choice][1]
+amino_tox_GCN = amino_dict[amino_choice][2]
+amino_tox_GCN_mw = amino_dict[amino_choice][3]
 
 alc_options = list(alc_dict.keys())
 alc_choice = col2.selectbox('Select alcohol', alc_options)
 alc_tox = alc_dict[alc_choice][0]
 alc_tox_mw = alc_dict[alc_choice][1]
+alc_tox_GCN = alc_dict[alc_choice][2]
+alc_tox_GCN_mw = alc_dict[alc_choice][3]
 
 sug_options = list(sug_dict.keys())
 sug_choice = col3.selectbox('Select sugar', sug_options)
 sug_tox = sug_dict[sug_choice][0]
 sug_tox_mw = sug_dict[sug_choice][1]
+sug_tox_GCN = sug_dict[sug_choice][2]
+sug_tox_GCN_mw = sug_dict[sug_choice][3]
 
 ####
 # Toxicity prediction function 
@@ -100,12 +106,22 @@ def calculate_weighted_tox2(water_fraction, alcohol_ratio, sugar_ratio, amino_ra
 
 
 
-predicted_tox = calculate_weighted_tox2(water_fraction, alc_ratio, 
+pred_tox = calculate_weighted_tox2(water_fraction, alc_ratio, 
                                        sug_ratio, amino_ratio, alc_tox, sug_tox, amino_tox)
 
-predicted_tox_mw = calculate_weighted_tox2(water_fraction, alc_ratio, 
+pred_tox_mw = calculate_weighted_tox2(water_fraction, alc_ratio, 
                                        sug_ratio, amino_ratio, alc_tox_mw, sug_tox_mw, amino_tox_mw)
 
+pred_tox_GCN = calculate_weighted_tox2(water_fraction, alc_ratio, 
+                                       sug_ratio, amino_ratio, alc_tox_GCN, sug_tox_GCN, amino_tox_GCN)
 
-st.markdown(f'## the NADE toxicity is {round(predicted_tox, 2)} mg/kg')
-st.markdown(f'## the NADE toxicity is {round(predicted_tox_mw/100, 2)} mol/kg')
+pred_tox_GCN_mw = calculate_weighted_tox2(water_fraction, alc_ratio, 
+                                       sug_ratio, amino_ratio, alc_tox_GCN_mw, sug_tox_GCN_mw, amino_tox_GCN_mw)
+
+st.markdown(f'# prediction based on CATMOS model')
+st.markdown(f'## NADE LD50 is {round(pred_tox, 2)} mg/kg')
+st.markdown(f'## NADE molar toxicity is {round(pred_tox_mw/100, 2)} mol/kg')
+
+st.markdown(f'# prediction based on GCN model')
+st.markdown(f'## NADE LD50 is is {round(pred_tox_GCN, 2)} mg/kg')
+st.markdown(f'## NADE molar toxicity is {round(pred_tox_GCN_mw/100, 2)} mol/kg')
